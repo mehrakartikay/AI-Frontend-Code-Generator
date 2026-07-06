@@ -3,11 +3,13 @@ package com.project.lovable_clone.ServiceImpl;
 import com.project.lovable_clone.DTO.project.ProjectRequest;
 import com.project.lovable_clone.DTO.project.ProjectResponse;
 import com.project.lovable_clone.DTO.project.ProjectSummaryResponse;
+import com.project.lovable_clone.Error.BadRequestException;
 import com.project.lovable_clone.Error.ResourceNotFoundException;
 import com.project.lovable_clone.Repository.ProjectMemberRepository;
 import com.project.lovable_clone.Repository.ProjectRepository;
 import com.project.lovable_clone.Repository.UserRepository;
 import com.project.lovable_clone.Service.ProjectService;
+import com.project.lovable_clone.Service.SubscriptionService;
 import com.project.lovable_clone.entity.Project;
 import com.project.lovable_clone.entity.ProjectMember;
 import com.project.lovable_clone.entity.ProjectMemberId;
@@ -38,6 +40,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMapper projectMapper;
     private final ProjectMemberRepository projectMemberRepository;
     private final AuthUtil authUtil;
+    private final SubscriptionService subscriptionService;
 
 
     @Override
@@ -63,6 +66,11 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse createProject(ProjectRequest request) {
+
+
+        if(!subscriptionService.canCreateNewProject()){
+            throw new BadRequestException("You can't create new project with current plan");
+        }
         Long userId = authUtil.getUserId();
 
 
@@ -71,6 +79,8 @@ public class ProjectServiceImpl implements ProjectService {
 //        );
 
         User owner = userRepository.getReferenceById(userId);
+
+
         Project project = Project.builder()
                 .name(request.name())
                 .isPublic(false)

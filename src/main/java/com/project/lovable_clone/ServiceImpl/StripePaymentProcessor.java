@@ -3,6 +3,7 @@ package com.project.lovable_clone.ServiceImpl;
 import com.project.lovable_clone.DTO.Subscription.CheckoutRequest;
 import com.project.lovable_clone.DTO.Subscription.CheckoutResponse;
 import com.project.lovable_clone.DTO.Subscription.PortalResponse;
+import com.project.lovable_clone.Error.BadRequestException;
 import com.project.lovable_clone.Error.ResourceNotFoundException;
 import com.project.lovable_clone.Repository.PlanRepository;
 import com.project.lovable_clone.Repository.UserRepository;
@@ -83,6 +84,9 @@ public class StripePaymentProcessor implements PaymentProcesser {
 
     @Override
     public void handleWebhookEvent(String type, StripeObject stripeObject, Map<String, String> metadata) {
+        log.info("******** WEBHOOK CONTROLLER ENTERED ********");
+        log.info("Webhook event received: {}", type);
+        log.info("Stripe object class: {}", stripeObject == null ? "null" : stripeObject.getClass().getName());
         log.debug("Handling stripe event: {}", type);
 
         switch (type) {
@@ -101,6 +105,7 @@ public class StripePaymentProcessor implements PaymentProcesser {
             log.error("session object was null");
             return;
         }
+        log.info("Entered handleCheckoutSessionCompleted");
 
         Long userId = Long.parseLong(metadata.get("user_id"));
         Long planId = Long.parseLong(metadata.get("plan_id"));
@@ -110,6 +115,7 @@ public class StripePaymentProcessor implements PaymentProcesser {
 
         User user = getUser(userId);
         if(user.getStripeCustomerId() == null) {
+            log.info("Entered handleCheckoutSessionCompleted");
             user.setStripeCustomerId(customerId);
             userRepository.save(user);
         }
@@ -179,6 +185,30 @@ public class StripePaymentProcessor implements PaymentProcesser {
 
         subscriptionService.markSubscriptionPastDue(subId);
     }
+    @Override
+    public PortalResponse openCustomerPortal() {
+        Long userId = authUtil.getUserId();
+        User user = getUser(userId);
+        String stripeCustomerId = user.getStripeCustomerId();
+        if(stripeCustomerId == null|| stripeCustomerId.isEmpty()){
+            throw new BadRequestException("Missing Stripe Customer Id userId: " + userId);
+        }
+        try {
+            var portalSession = com.stripe.model.billingportal.Session.create(
+                    com.stripe.param.billingportal.SessionCreateParams.builder()
+                            .setCustomer(stripeCustomerId)
+                            .setReturnUrl(frontendUrl)
+                            .build()
+            );
+
+            return new  PortalResponse(portalSession.getUrl());
+        } catch (StripeException e) {
+            throw new RuntimeException(e);
+        }
+
+
+
+    }
 
 
     /// // Utility Methods
@@ -223,9 +253,5 @@ public class StripePaymentProcessor implements PaymentProcesser {
         return subDetails.getSubscription();
     }
 
-    @Override
-    public PortalResponse openCustomerPortal() {
 
-        return null;
-    }
 }

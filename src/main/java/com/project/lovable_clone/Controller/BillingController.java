@@ -62,6 +62,7 @@ public class BillingController {
             @RequestBody String payload,
             @RequestHeader("Stripe-Signature") String sigHeader
     ) {
+
         try {
             Event event = Webhook.constructEvent(payload, sigHeader, webhookSecretKey);
 
@@ -91,6 +92,7 @@ public class BillingController {
             }
 
             // Pass to your processor
+
             paymentProcesser.handleWebhookEvent(event.getType(), stripeObject, metadata);
             return ResponseEntity.ok().build();
         } catch (SignatureVerificationException e) {
@@ -100,4 +102,5 @@ public class BillingController {
 
 
     }
+
 }
