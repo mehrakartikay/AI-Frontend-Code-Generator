@@ -9,6 +9,7 @@ import com.project.lovable_clone.Repository.ProjectMemberRepository;
 import com.project.lovable_clone.Repository.ProjectRepository;
 import com.project.lovable_clone.Repository.UserRepository;
 import com.project.lovable_clone.Service.ProjectService;
+import com.project.lovable_clone.Service.ProjectTemplateService;
 import com.project.lovable_clone.Service.SubscriptionService;
 import com.project.lovable_clone.entity.Project;
 import com.project.lovable_clone.entity.ProjectMember;
@@ -41,6 +42,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final AuthUtil authUtil;
     private final SubscriptionService subscriptionService;
+    private final ProjectTemplateService projectTemplateService;
 
 
     @Override
@@ -97,6 +99,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .project(project)
                 .build();
         projectMemberRepository.save(projectMember);
+
+        projectTemplateService.initializeProjectFromTemplate(project.getId());
 
         return projectMapper.toProjectResponse(project);
 

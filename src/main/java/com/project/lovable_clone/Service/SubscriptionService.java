@@ -1,8 +1,5 @@
 package com.project.lovable_clone.Service;
 
-import com.project.lovable_clone.DTO.Subscription.CheckoutRequest;
-import com.project.lovable_clone.DTO.Subscription.CheckoutResponse;
-import com.project.lovable_clone.DTO.Subscription.PortalResponse;
 import com.project.lovable_clone.DTO.Subscription.SubscriptionResponse;
 import com.project.lovable_clone.enums.SubscriptionStatus;
 

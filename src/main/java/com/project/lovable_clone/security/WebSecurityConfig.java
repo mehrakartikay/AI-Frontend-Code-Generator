@@ -1,5 +1,6 @@
 package com.project.lovable_clone.security;
 
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,28 +22,54 @@ public class WebSecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity httpSecurity
+    ) throws Exception {
+
         httpSecurity
-                .csrf(csrfConfig -> csrfConfig.disable())
-                .sessionManagement(sessionManagementConfig -> sessionManagementConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth-> auth
-                        .requestMatchers("/api/auth/**","/webhooks/**").permitAll()
+                .csrf(csrf -> csrf.disable())
+
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
+
+                .authorizeHttpRequests(auth -> auth
+
+                        // SSE Flux causes an internal ASYNC dispatch.
+                        // The original request has already been authenticated.
+                        .dispatcherTypeMatchers(
+                                DispatcherType.ASYNC,
+                                DispatcherType.ERROR
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/webhooks/**"
+                        ).permitAll()
+
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-        return httpSecurity.build();
 
+                .addFilterBefore(
+                        jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
+
+        return httpSecurity.build();
     }
+
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config
+    ) throws Exception {
+
         return config.getAuthenticationManager();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new  BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder();
     }
-
-
-
 }
