@@ -2,11 +2,13 @@ package com.project.lovable_clone.Service;
 
 import com.project.lovable_clone.DTO.auth.FileContentResponse;
 import com.project.lovable_clone.DTO.project.FileNode;
+import com.project.lovable_clone.DTO.project.FileTreeResponse;
+
 import java.util.List;
 
 
 public interface ProjectFileService {
-    List<FileNode> getFileTree(Long projectId);
+    FileTreeResponse getFileTree(Long projectId);
 
 
     FileContentResponse getFileContent(Long projectId, String path);

@@ -1,5 +1,6 @@
 package com.project.lovable_clone.ServiceImpl;
 
+import com.project.lovable_clone.DTO.Chat.StreamResponse;
 import com.project.lovable_clone.Error.ResourceNotFoundException;
 import com.project.lovable_clone.LLM.Advisors.FileTreeContextAdvisor;
 import com.project.lovable_clone.LLM.LLMResponseParser;
@@ -8,6 +9,7 @@ import com.project.lovable_clone.LLM.Tools.CodeGenerationTools;
 import com.project.lovable_clone.Repository.*;
 import com.project.lovable_clone.Service.AiGenerationService;
 import com.project.lovable_clone.Service.ProjectFileService;
+import com.project.lovable_clone.Service.UsageService;
 import com.project.lovable_clone.entity.*;
 import com.project.lovable_clone.enums.ChatEventType;
 import com.project.lovable_clone.enums.MessageRole;
@@ -42,11 +44,15 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     private final ChatSessionRepository chatSessionRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatEventRepository chatEventRepository;
+    private final UsageService usageService;
     private static final Pattern FILE_TAG_PATTERN = Pattern.compile("<file path=\"([^\"]+)\">(.*?)</file>",Pattern.DOTALL);
 
     @Override
     @PreAuthorize("@security.canEditProject(#projectId)")
-    public Flux<String> streamResponse(String userPrompt, Long projectId) {
+    public Flux<StreamResponse> streamResponse(String userPrompt, Long projectId) {
+
+        //usageService.checkDailyTokensUsage();
+
         Long userId = authUtil.getUserId();
 
         ChatSession chatSession=createChatSessionIfNotExists(projectId,userId);
@@ -60,6 +66,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
         CodeGenerationTools codeGenerationTools = new CodeGenerationTools(projectFileService,projectId);
         AtomicReference<Long> startTime = new AtomicReference<>(System.currentTimeMillis());
         AtomicReference<Long> endTime = new AtomicReference<>(0L);
+        AtomicReference<Usage> usageRef = new AtomicReference<>();
 
         return chatClient.prompt()
                 .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
@@ -77,6 +84,10 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                     if(content!=null && !content.isEmpty() && endTime.get()==0L){
                         endTime.set(System.currentTimeMillis());
                     }
+
+                    if(response.getMetadata().getUsage()!=null){
+                        usageRef.set(response.getMetadata().getUsage());
+                    }
                     fullResponseBuffer.append(content);
 
 
@@ -86,13 +97,16 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                         long duration = (endTime.get() - startTime.get())/1000;
 
 
-                        finalizeChats(userPrompt,chatSession, fullResponseBuffer.toString(),duration, );
+                        finalizeChats(userPrompt,chatSession, fullResponseBuffer.toString(),duration,usageRef.get());
                     });
 
 
                 })
                 .doOnError(error -> log.error("error encounter while streaming on projectid:" + projectId))
-                .map(response -> response.getResult().getOutput().getText());
+                .map(response -> {
+                    String text = response.getResult().getOutput().getText();
+                    return new StreamResponse(text != null ? text : "");
+                });
 
 
 

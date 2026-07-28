@@ -1,7 +1,6 @@
 package com.project.lovable_clone.Controller;
 
 
-import com.project.lovable_clone.DTO.Subscription.PlanLimitsResponse;
 import com.project.lovable_clone.DTO.Subscription.UsageTodayResponse;
 import com.project.lovable_clone.Service.UsageService;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +19,7 @@ public class UsageController {
     @GetMapping("/today")
     public ResponseEntity<UsageTodayResponse> getTodayUsage() {
         Long userId = 1L;
-        return ResponseEntity.ok(usageService.getTodayUsageOfUser(userId));
-    }
-
-    @GetMapping("/limits")
-    public ResponseEntity<PlanLimitsResponse> getPlanLimits() {
-        Long userId = 1L;
-        return ResponseEntity.ok(usageService.getCurrentSubscriptionLimitsOfUser(userId));
+//        return ResponseEntity.ok(usageService.getTodayUsageOfUser(userId));
+        return null;
     }
 }

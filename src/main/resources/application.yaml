@@ -17,13 +17,19 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+
   ai:
     openai:
       api-key: ${SPRING_AI_OPEN_AI_KEY}
       base-url: https://openrouter.ai/api
       chat:
         options:
-          model: tencent/hy3:free
+          model: poolside/laguna-m.1:free
           temperature: 0.0
 
 

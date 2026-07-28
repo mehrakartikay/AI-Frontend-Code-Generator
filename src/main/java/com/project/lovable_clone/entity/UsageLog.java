@@ -1,30 +1,33 @@
 package com.project.lovable_clone.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "usage_logs", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "date"}) // One log per user per day
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UsageLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    User user;
-    Project project;
-    String action;
-    Integer tokenUsed;
-    Integer durationMs;
-    String metaData;
-    Instant createdAt;
+    @Column(name = "user_id", nullable = false)
+    Long userId;
+
+    @Column(nullable = false)
+    LocalDate date;
+
+    Integer tokensUsed;
 }
